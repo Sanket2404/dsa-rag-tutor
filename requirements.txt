@@ -5,3 +5,4 @@ sentence-transformers>=3.0.0
 pypdf>=4.0.0
 python-multipart>=0.0.9
 rich>=13.0.0
+langchain-text-splitters>=0.2.0
