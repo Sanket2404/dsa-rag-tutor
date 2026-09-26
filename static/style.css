@@ -40,12 +40,18 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
   font-family: var(--font-sans);
   background-color: var(--bg-deep);
   color: var(--text-main);
-  height: 100vh;
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
+  position: fixed;
+  inset: 0;
+  width: 100%;
   -webkit-font-smoothing: antialiased;
   background-image: 
     radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
@@ -59,7 +65,9 @@ body {
 .app-layout {
   display: grid;
   grid-template-columns: 320px 1fr;
-  height: 100vh;
+  height: 100%;
+  height: 100dvh;
+  width: 100%;
   position: relative;
   overflow: hidden;
 }
@@ -429,14 +437,18 @@ body {
 .main-content {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
+  height: 100dvh;
+  min-height: 0;
   position: relative;
   background: rgba(14, 19, 31, 0.4);
+  overflow: hidden;
 }
 
 .chat-header {
-  height: 68px;
-  padding: 0 24px;
+  flex-shrink: 0;
+  height: 64px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -501,12 +513,14 @@ body {
    ========================================================================== */
 
 .messages-container {
-  flex: 1;
+  flex: 1 1 0%;
+  min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .messages-container::-webkit-scrollbar {
@@ -684,60 +698,84 @@ body {
   background: rgba(245, 158, 11, 0.05);
 }
 
-/* Rich Answer Typography (ChatGPT / Perplexity AI Aesthetic) */
+/* Rich Answer Typography (ChatGPT & Gemini Aesthetic) */
 .answer-prose {
-  color: var(--text-normal);
-  font-size: 0.92rem;
-  line-height: 1.65;
+  color: #e2e8f0;
+  font-size: 0.94rem;
+  line-height: 1.7;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
-.answer-prose .md-h2 {
-  font-size: 1.18rem;
+.answer-prose h1, .answer-prose h2, .answer-prose .md-h2 {
+  font-size: 1.2rem;
   font-weight: 700;
   color: #f8fafc;
-  margin: 16px 0 8px 0;
+  margin: 18px 0 10px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 4px;
+  padding-bottom: 6px;
+  letter-spacing: -0.01em;
 }
 
-.answer-prose .md-h3 {
-  font-size: 1.05rem;
+.answer-prose h3, .answer-prose .md-h3 {
+  font-size: 1.06rem;
   font-weight: 600;
-  color: #e2e8f0;
-  margin: 14px 0 6px 0;
+  color: #38bdf8;
+  margin: 16px 0 8px 0;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.answer-prose .md-h4 {
-  font-size: 0.92rem;
+.answer-prose h4, .answer-prose .md-h4 {
+  font-size: 0.95rem;
   font-weight: 600;
-  color: var(--accent-cyan);
-  margin: 12px 0 4px 0;
+  color: #a5b4fc;
+  margin: 14px 0 6px 0;
 }
 
-.answer-prose .md-p {
-  margin: 6px 0;
+.answer-prose p, .answer-prose .md-p {
+  margin: 8px 0;
+  line-height: 1.7;
 }
 
-.answer-prose .md-ul {
-  margin: 6px 0 10px 22px;
+.answer-prose ul, .answer-prose .md-ul {
+  margin: 8px 0 12px 22px;
   list-style-type: disc;
 }
 
-.answer-prose .md-ul li {
-  margin: 4px 0;
+.answer-prose ol, .answer-prose .md-ol {
+  margin: 8px 0 12px 22px;
+  list-style-type: decimal;
 }
 
-.answer-prose .inline-code {
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+.answer-prose li {
+  margin: 5px 0;
+  line-height: 1.65;
+}
+
+.answer-prose strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.answer-prose blockquote {
+  border-left: 3px solid var(--accent-cyan);
+  padding: 6px 14px;
+  margin: 10px 0;
+  background: rgba(56, 189, 248, 0.05);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: #94a3b8;
+}
+
+.answer-prose code, .answer-prose .inline-code {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 4px;
   padding: 2px 6px;
   font-family: var(--font-mono);
-  font-size: 0.82rem;
-  color: #67e8f9;
+  font-size: 0.84rem;
+  color: #38bdf8;
 }
 
 /* Code Blocks Styling with Copy Button */
@@ -1032,10 +1070,16 @@ body {
    ========================================================================== */
 
 .input-area {
-  padding: 16px 24px 20px;
+  flex-shrink: 0;
+  width: 100%;
+  position: relative;
+  z-index: 30;
+  padding: 14px 20px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
   border-top: 1px solid var(--border-subtle);
-  background: rgba(7, 9, 14, 0.8);
-  backdrop-filter: blur(16px);
+  background: rgba(7, 9, 14, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .input-form {
@@ -1499,21 +1543,29 @@ body {
 @media (max-width: 860px) {
   .app-layout {
     grid-template-columns: 1fr;
+    height: 100%;
+    height: 100dvh;
+    position: fixed;
+    inset: 0;
+    width: 100%;
   }
+
   .sidebar {
     position: fixed;
     top: 0;
     left: -330px;
     width: min(85vw, 320px);
-    height: 100vh;
+    height: 100%;
     height: 100dvh;
     z-index: 999;
     box-shadow: 0 0 32px rgba(0, 0, 0, 0.8);
     transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
   .sidebar.open {
     left: 0;
   }
+
   .sidebar-close-btn {
     display: flex;
     align-items: center;
@@ -1528,97 +1580,213 @@ body {
     cursor: pointer;
     transition: var(--transition);
   }
+
   .sidebar-close-btn:hover {
     color: white;
     background: rgba(244, 63, 94, 0.25);
     border-color: rgba(244, 63, 94, 0.5);
   }
+
   .mobile-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
   }
+
+  .main-content {
+    height: 100%;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .chat-header {
-    padding: 10px 16px;
+    padding: 0 16px;
+    height: 56px;
+    flex-shrink: 0;
   }
+
   .messages-container {
-    padding: 14px 14px 20px;
+    flex: 1 1 0%;
+    min-height: 0;
+    padding: 16px 14px;
+    gap: 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
+
   .input-area {
-    padding: 12px 14px 16px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 40;
+    padding: 10px 14px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    background: rgba(7, 9, 14, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .input-form {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+
+  #queryInput {
+    font-size: 16px; /* Prevents iOS Safari page zoom */
+  }
+
+  /* ChatGPT / Gemini Mobile Message Layout */
+  .message-row {
+    max-width: 100%;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .message-row.user {
+    justify-content: flex-end;
+  }
+
+  .message-row.user .msg-avatar {
+    display: none; /* Clean right-aligned user bubble */
+  }
+
+  .message-row.user .msg-body {
+    max-width: 86%;
+  }
+
+  .message-row.user .msg-content {
+    border-radius: 18px 18px 4px 18px;
+    padding: 10px 14px;
+    font-size: 0.92rem;
+  }
+
+  .message-row.ai {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .message-row.ai .msg-avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .message-row.ai .msg-body {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .message-row.ai .msg-content {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+  }
+
+  .msg-actions {
+    flex-wrap: wrap;
+    gap: 6px;
   }
 }
 
 @media (max-width: 640px) {
   .chat-header {
-    padding: 8px 12px;
-    min-height: 52px;
+    padding: 0 12px;
+    height: 52px;
   }
+
   .chat-title {
-    font-size: 1.05rem;
+    font-size: 1.02rem;
   }
+
   .chat-subtitle {
     font-size: 0.72rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 190px;
+    max-width: 180px;
   }
+
   .action-btn span {
     display: none;
   }
+
   .action-btn {
-    padding: 8px;
+    padding: 7px;
     border-radius: var(--radius-sm);
   }
+
   .welcome-box {
-    margin: 14px 6px;
-    padding: 22px 14px;
+    margin: 10px 4px;
+    padding: 18px 12px;
     border-radius: var(--radius-md);
   }
+
   .welcome-heading {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
   }
+
   .welcome-text {
-    font-size: 0.82rem;
-    margin-bottom: 16px;
+    font-size: 0.8rem;
+    margin-bottom: 14px;
   }
+
   .prompt-chips {
     flex-direction: column;
     gap: 8px;
     width: 100%;
   }
+
   .prompt-chip {
     width: 100%;
     justify-content: flex-start;
     font-size: 0.8rem;
     padding: 10px 12px;
   }
+
   .message-row {
-    padding: 10px 0;
+    padding: 4px 0;
   }
-  .message-body {
-    max-width: 100%;
-    font-size: 0.88rem;
-    line-height: 1.55;
+
+  .answer-prose {
+    font-size: 0.9rem;
+    line-height: 1.65;
   }
-  .sources-container {
+
+  .answer-prose h2, .answer-prose .md-h2 {
+    font-size: 1.1rem;
+    margin: 14px 0 6px;
+  }
+
+  .answer-prose h3, .answer-prose .md-h3 {
+    font-size: 1rem;
+    margin: 12px 0 6px;
+  }
+
+  .code-block-wrapper pre {
+    padding: 10px;
     font-size: 0.78rem;
   }
+
   .input-area {
-    padding: 8px 10px 12px;
+    padding: 8px 10px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
   }
+
   .input-form {
-    padding: 4px 6px;
+    padding: 4px 8px;
     gap: 4px;
   }
+
   #queryInput {
-    font-size: 0.95rem;
-    padding: 8px 6px;
+    font-size: 16px;
+    padding: 6px 4px;
   }
+
   .btn-voice {
     padding: 6px;
   }
+
   .btn-send {
     padding: 8px;
     width: 36px;
@@ -1630,7 +1798,8 @@ body {
   .chat-subtitle {
     display: none;
   }
+
   .welcome-heading {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
   }
 }

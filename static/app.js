@@ -387,7 +387,39 @@ document.addEventListener("DOMContentLoaded", () => {
   function formatAnswerText(text) {
     if (!text) return "";
 
-    // 1. Extract fenced code blocks first to protect them from regex manipulation
+    // 1. If marked.js is available, use it for complete ChatGPT/Gemini Markdown rendering
+    if (typeof marked !== "undefined") {
+      try {
+        marked.setOptions({
+          breaks: true,
+          gfm: true
+        });
+        let html = marked.parse(text);
+
+        // Enhance <pre><code> blocks with ChatGPT-style top bar and Copy button
+        html = html.replace(/<pre><code(?:\s+class="language-([^"]*)")?>([\s\S]*?)<\/code><\/pre>/gi, (match, lang, code) => {
+          const displayLang = (lang || "code").trim();
+          return `
+            <div class="code-block-wrapper">
+              <div class="code-block-header">
+                <span class="code-lang-label">${escapeHtml(displayLang)}</span>
+                <button type="button" class="btn-code-copy" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code class="language-${escapeHtml(displayLang)}">${code}</code></pre>
+            </div>
+          `;
+        });
+
+        // Wrap tables with horizontal scroll container for mobile
+        html = html.replace(/<table>([\s\S]*?)<\/table>/gi, '<div class="table-scroll-wrapper"><table class="md-table">$1</table></div>');
+
+        return html;
+      } catch (err) {
+        console.warn("Marked parse error, using fallback:", err);
+      }
+    }
+
+    // 2. Comprehensive Fallback Parser
     const codeBlocks = [];
     let processed = text.replace(/```([a-zA-Z0-9_\-\+]*)\n([\s\S]*?)```/g, (match, lang, code) => {
       const idx = codeBlocks.length;
@@ -404,12 +436,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return `__CODE_BLOCK_${idx}__`;
     });
 
-    // 2. Parse Markdown Headings
     processed = processed.replace(/^#### (.*?)$/gm, '<h4 class="md-h4">$1</h4>');
     processed = processed.replace(/^### (.*?)$/gm, '<h3 class="md-h3">$1</h3>');
     processed = processed.replace(/^## (.*?)$/gm, '<h2 class="md-h2">$1</h2>');
 
-    // 3. Parse Markdown Tables
     const tableRegex = /\|(.+)\|\n\|[-:\s|]+\|\n((?:\|.+\|\n?)+)/g;
     processed = processed.replace(tableRegex, (match, headerRow, bodyRows) => {
       const ths = headerRow.split("|").map(h => h.trim()).filter(h => h).map(h => `<th>${escapeHtml(h)}</th>`).join("");
@@ -420,46 +450,41 @@ document.addEventListener("DOMContentLoaded", () => {
       return `<div class="table-scroll-wrapper"><table class="md-table"><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div>`;
     });
 
-    // 4. Parse Bold and Italic
     processed = processed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     processed = processed.replace(/\*([^\*]+?)\*/g, '<em>$1</em>');
-
-    // 5. Parse Inline Code: `code`
     processed = processed.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
 
-    // 6. Split lines for paragraphs & bullet lists
     const lines = processed.split("\n");
     let result = "";
     let inList = false;
+    let inOrderedList = false;
 
     lines.forEach((line) => {
       line = line.trim();
       if (!line) return;
 
       if (line.startsWith("__CODE_BLOCK_") || line.startsWith("<h2") || line.startsWith("<h3") || line.startsWith("<h4") || line.startsWith("<div class=\"table-scroll")) {
-        if (inList) {
-          result += "</ul>";
-          inList = false;
-        }
+        if (inList) { result += "</ul>"; inList = false; }
+        if (inOrderedList) { result += "</ol>"; inOrderedList = false; }
         result += line;
-      } else if (line.startsWith("•") || line.startsWith("- ")) {
-        if (!inList) {
-          result += "<ul class=\"md-ul\">";
-          inList = true;
-        }
-        result += `<li>${line.replace(/^[•\-]\s*/, '')}</li>`;
+      } else if (line.startsWith("•") || line.startsWith("- ") || line.startsWith("* ")) {
+        if (inOrderedList) { result += "</ol>"; inOrderedList = false; }
+        if (!inList) { result += "<ul class=\"md-ul\">"; inList = true; }
+        result += `<li>${line.replace(/^[•\-*]\s*/, '')}</li>`;
+      } else if (/^\d+\.\s/.test(line)) {
+        if (inList) { result += "</ul>"; inList = false; }
+        if (!inOrderedList) { result += "<ol class=\"md-ol\">"; inOrderedList = true; }
+        result += `<li>${line.replace(/^\d+\.\s*/, '')}</li>`;
       } else {
-        if (inList) {
-          result += "</ul>";
-          inList = false;
-        }
-        result += `<p class=\"md-p\">${line}</p>`;
+        if (inList) { result += "</ul>"; inList = false; }
+        if (inOrderedList) { result += "</ol>"; inOrderedList = false; }
+        result += `<p class="md-p">${line}</p>`;
       }
     });
 
     if (inList) result += "</ul>";
+    if (inOrderedList) result += "</ol>";
 
-    // 7. Restore protected code blocks
     codeBlocks.forEach((block, idx) => {
       result = result.replace(`__CODE_BLOCK_${idx}__`, block);
     });
