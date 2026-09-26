@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DSA RAG Tutor • Local Document Intelligence</title>
+  <meta name="description" content="Production-ready local RAG studio powered by ChromaDB and Sentence-Transformers.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-layout" id="appLayout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <div>
+            <div class="brand-title">DSA RAG Tutor</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Document Management -->
+      <div class="sidebar-section">
+        <div class="section-title">
+          <span>KNOWLEDGE REPOSITORY</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button class="btn-sync-folder" id="btnSyncFolder" title="Scan sample_docs folder for new files">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+              </svg>
+              Sync
+            </button>
+            <span class="chunk-badge" id="totalChunksBadge">0 chunks</span>
+          </div>
+        </div>
+
+        <!-- Upload Drop Zone -->
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="fileInput" accept=".pdf,.txt,.md" multiple style="display:none;">
+          <div class="upload-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <div class="upload-text">
+            <strong>Drop all 14 DSA Lecture PDFs here</strong>
+            <span>or click to select multiple files</span>
+          </div>
+          <div class="upload-progress" id="uploadProgress" style="display:none;">
+            <div class="progress-bar-fill" id="progressBarFill"></div>
+            <span class="upload-progress-text" id="uploadProgressText">Indexing 0 of 0...</span>
+          </div>
+        </div>
+
+        <!-- Indexed Files List -->
+        <div class="doc-list" id="docList">
+          <div class="loading-state">Loading indexed documents...</div>
+        </div>
+      </div>
+
+      <!-- Retrieval Parameters -->
+      <div class="sidebar-section">
+        <div class="section-title">
+          <span>RAG HYPERPARAMETERS</span>
+          <button class="btn-help-link" id="btnOpenHelpModal" title="Learn how these work">How these work?</button>
+        </div>
+        
+        <!-- Top-K Slider -->
+        <div class="param-row">
+          <div class="param-label">
+            <span>Top-K Context Chunks</span>
+            <span class="param-val" id="topKVal">3</span>
+          </div>
+          <input type="range" id="topKSlider" min="1" max="5" value="3" class="range-slider">
+          <span class="param-hint">Number of document excerpts retrieved from ChromaDB.</span>
+        </div>
+
+        <!-- Relevance Guardrail Slider -->
+        <div class="param-row">
+          <div class="param-label">
+            <span class="param-title-with-info" id="guardrailLabel">
+              <span>Relevance Guardrail</span>
+              <span class="info-badge" title="Click to learn about Guardrails">ℹ️</span>
+            </span>
+            <span class="param-val" id="thresholdVal">65%</span>
+          </div>
+          <input type="range" id="thresholdSlider" min="50" max="90" value="65" class="range-slider">
+          <span class="param-hint">Anti-hallucination cutoff: rejects queries below this match %.</span>
+        </div>
+
+        <!-- Temperature Slider -->
+        <div class="param-row">
+          <div class="param-label">
+            <span class="param-title-with-info" id="temperatureLabel">
+              <span>Temperature</span>
+              <span class="info-badge" title="Click to learn about Temperature">ℹ️</span>
+            </span>
+            <span class="param-val" id="tempVal">0.10</span>
+          </div>
+          <input type="range" id="tempSlider" min="0" max="1" step="0.05" value="0.10" class="range-slider">
+          <span class="param-hint">0.0–0.2 = strictly factual & grounded; 0.7+ = creative.</span>
+        </div>
+      </div>
+
+      <!-- System Status Footer -->
+      <div class="sidebar-footer">
+        <div class="engine-tag">
+          <span class="tag-label">Vector DB</span>
+          <span class="tag-val">ChromaDB</span>
+        </div>
+        <div class="engine-tag">
+          <span class="tag-label">Embedding</span>
+          <span class="tag-val">MiniLM-L6</span>
+        </div>
+        <div class="engine-tag">
+          <span class="tag-label">LLM Engine</span>
+          <span class="tag-val" id="llmEngineTag">Ollama / Local</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CHAT CONTAINER -->
+    <main class="main-content" id="mainContent">
+      
+      <!-- Top Navigation -->
+      <header class="chat-header">
+        <div class="header-left">
+          <button class="mobile-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <div>
+            <h1 class="chat-title">DSA RAG Tutor</h1>
+            <p class="chat-subtitle">Ask questions across your 14 Intermediate DSA Lecture PDFs & Notes</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="action-btn" id="btnClearChat" title="Clear conversation history">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            <span>Reset Chat</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Chat Messages Scroll Container -->
+      <section class="messages-container" id="messagesContainer">
+
+        <!-- Welcome Banner -->
+        <div class="welcome-box" id="welcomeBox">
+          <div class="welcome-badge">DSA RAG Tutor • 14 Lectures Indexed</div>
+          <h2 class="welcome-heading">Ask anything from your DSA lectures</h2>
+          <p class="welcome-text">
+            Search algorithms, complexity analyses, memory models, and code solutions directly grounded in your 14 lecture notes:
+          </p>
+
+          <div class="prompt-chips">
+            <button class="prompt-chip" data-query="Explain in-place transpose of an N x N matrix and how to rotate a matrix 90 degrees clockwise">
+              📐 <span>Matrix Transpose & 90° Rotation</span>
+            </button>
+            <button class="prompt-chip" data-query="Can you explain memory management in simple terms: Stack vs Heap and why swap fails due to pass-by-value?">
+              🧠 <span>Memory Management: Stack vs Heap</span>
+            </button>
+            <button class="prompt-chip" data-query="How does the Prefix Sum technique optimize range sum queries from O(N) to O(1)?">
+              ⚡ <span>Prefix Sum & O(1) Range Queries</span>
+            </button>
+            <button class="prompt-chip" data-query="In Bit Manipulation, how do you check if the ith bit is set and how do you set it?">
+              🔢 <span>Bit Manipulation: Check & Set ith Bit</span>
+            </button>
+            <button class="prompt-chip" data-query="How to calculate Time Complexity for dependent nested loops where j goes from i to N?">
+              ⏱️ <span>Time Complexity of Nested Loops</span>
+            </button>
+            <button class="prompt-chip" data-query="Why are strings immutable in Java and Python, and how to reverse words in a string?">
+              🔤 <span>String Immutability & Word Reversal</span>
+            </button>
+            <button class="prompt-chip prompt-chip-guardrail" data-query="Who won the 2022 FIFA World Cup?">
+              🛡️ <span>Test Guardrail: Who won World Cup?</span>
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Message Input Bar -->
+      <footer class="input-area">
+        <form class="input-form" id="chatForm">
+          <!-- Voice Dictation / Speech-to-Text Feature -->
+          <div class="voice-wrapper" id="voiceWrapper">
+            <button type="button" class="btn-voice" id="btnVoice" title="Click to speak your question (Voice Input)">
+              <svg class="mic-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+
+            <!-- Animated Soundwaves Equalizer Indicator -->
+            <div class="voice-waves" id="voiceWaves" style="display: none;" title="Listening to your voice... Speak now">
+              <span class="wave-bar bar-1"></span>
+              <span class="wave-bar bar-2"></span>
+              <span class="wave-bar bar-3"></span>
+              <span class="wave-bar bar-4"></span>
+              <span class="wave-bar bar-5"></span>
+            </div>
+          </div>
+
+          <textarea 
+            id="queryInput" 
+            placeholder="Ask a question about your indexed documents..." 
+            rows="1" 
+            required></textarea>
+
+          <button type="submit" class="btn-send" id="btnSend" title="Send Question">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </form>
+        <div class="input-footer-note">
+          Running 100% locally with ChromaDB • Data never leaves your machine
+        </div>
+      </footer>
+
+    </main>
+
+  </div>
+
+  <!-- PROMPT INSPECTOR MODAL -->
+  <div class="modal-overlay" id="promptModal" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="4 17 10 11 4 5"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+          <h3>Inspecting Augmented Prompt</h3>
+        </div>
+        <button class="modal-close" id="btnClosePromptModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-info">This is the exact structured prompt assembled by the RAG engine containing the injected context chunks:</p>
+        <div class="code-preview" id="rawPromptContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RAG CONCEPTS & HYPERPARAMETERS GUIDE MODAL -->
+  <div class="modal-overlay" id="helpModal" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <h3>How RAG Parameters & Guardrails Work</h3>
+        </div>
+        <button class="modal-close" id="btnCloseHelpModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <div class="concept-card">
+          <h4>🛡️ What is the "Relevance Guardrail"?</h4>
+          <p>
+            When a user asks a question, ChromaDB computes a <strong>Cosine Similarity score (0% to 100%)</strong> between the question vector and your indexed documents.
+          </p>
+          <p>
+            <strong>Without a guardrail:</strong> If you ask <em>"Who won the 2022 World Cup?"</em> on an AI company manual, the vector DB will still return random unrelated paragraphs (e.g. 45% match). The AI would attempt to answer and <strong>hallucinate</strong>!
+          </p>
+          <p>
+            <strong>With the guardrail (Default 65%):</strong> If the highest matching paragraph is below 65%, the RAG engine immediately blocks the query and replies: <em>"I cannot find relevant information in the uploaded documents."</em>
+          </p>
+          <ul class="concept-list">
+            <li><strong>High (75% - 85%):</strong> Strict. Only answers if exact, high-confidence paragraphs are found.</li>
+            <li><strong>Balanced (65%):</strong> Recommended. Blocks out-of-domain queries while answering valid ones.</li>
+            <li><strong>Low (50% - 60%):</strong> Permissive. Answers even with partial or tangential matches.</li>
+          </ul>
+        </div>
+
+        <div class="concept-card">
+          <h4>🌡️ What is "Model Temperature"?</h4>
+          <p>
+            Temperature controls the randomness/creativity of text generation:
+          </p>
+          <ul class="concept-list">
+            <li><strong>0.0 – 0.2 (RAG Gold Standard):</strong> Strictly deterministic and fact-bound. Forces the model to stick 100% to the retrieved text.</li>
+            <li><strong>0.7 – 1.0 (Creative):</strong> Introduces varied vocabulary and novel phrasing, but drastically increases hallucination risk.</li>
+          </ul>
+        </div>
+
+        <div class="concept-card">
+          <h4>📦 What is "Top-K Chunks"?</h4>
+          <p>
+            The number of most relevant document snippets pulled from ChromaDB to feed into the prompt context. <strong>3 chunks</strong> is usually the sweet spot between sufficient context and fast latency.
+          </p>
+        </div>
+
+        <div class="concept-card">
+          <h4>🤖 MiniLM vs. Ollama: What is the Difference?</h4>
+          <p>
+            This is the #1 interview question in RAG architecture:
+          </p>
+          <ul class="concept-list">
+            <li><strong>MiniLM (all-MiniLM-L6-v2):</strong> It is an <em>Embedding Model</em> (384-dimensional vectors). Its only job is to convert text into numbers so ChromaDB can search it. It <em>cannot</em> write sentences or chat.</li>
+            <li><strong>Ollama:</strong> It is a <em>Generative LLM Runner</em> (runs models like LLaMA 3.2, Mistral, Gemma locally). Its job is to read the retrieved chunks and write fluent, human-like answers.</li>
+            <li><strong>How they work together:</strong> MiniLM does the <em>Retrieval</em> (search), and Ollama does the <em>Generation</em> (writing)!</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

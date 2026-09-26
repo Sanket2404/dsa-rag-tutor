@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+.venv/
+env/
+venv/
+chroma_knowledge_store/
+chroma_db/
+test_chroma_storage/
+*.log
