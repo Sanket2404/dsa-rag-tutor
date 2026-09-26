@@ -32,6 +32,7 @@
   --font-mono: 'JetBrains Mono', monospace;
   
   --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  --vvh: 100dvh;
 }
 
 * {
@@ -45,13 +46,15 @@ html, body {
   background-color: var(--bg-deep);
   color: var(--text-main);
   height: 100%;
-  height: 100dvh;
+  height: var(--vvh, 100dvh);
+  max-height: var(--vvh, 100dvh);
   margin: 0;
   padding: 0;
   overflow: hidden;
   position: fixed;
   inset: 0;
   width: 100%;
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   background-image: 
     radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
@@ -66,9 +69,11 @@ html, body {
   display: grid;
   grid-template-columns: 320px 1fr;
   height: 100%;
-  height: 100dvh;
+  height: var(--vvh, 100dvh);
+  max-height: var(--vvh, 100dvh);
   width: 100%;
-  position: relative;
+  position: fixed;
+  inset: 0;
   overflow: hidden;
 }
 
@@ -438,7 +443,8 @@ html, body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  height: 100dvh;
+  height: var(--vvh, 100dvh);
+  max-height: var(--vvh, 100dvh);
   min-height: 0;
   position: relative;
   background: rgba(14, 19, 31, 0.4);
@@ -1544,10 +1550,12 @@ html, body {
   .app-layout {
     grid-template-columns: 1fr;
     height: 100%;
-    height: 100dvh;
+    height: var(--vvh, 100dvh);
+    max-height: var(--vvh, 100dvh);
     position: fixed;
     inset: 0;
     width: 100%;
+    overflow: hidden;
   }
 
   .sidebar {
@@ -1556,7 +1564,8 @@ html, body {
     left: -330px;
     width: min(85vw, 320px);
     height: 100%;
-    height: 100dvh;
+    height: var(--vvh, 100dvh);
+    max-height: var(--vvh, 100dvh);
     z-index: 999;
     box-shadow: 0 0 32px rgba(0, 0, 0, 0.8);
     transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1595,7 +1604,8 @@ html, body {
 
   .main-content {
     height: 100%;
-    height: 100dvh;
+    height: var(--vvh, 100dvh);
+    max-height: var(--vvh, 100dvh);
     min-height: 0;
     overflow: hidden;
   }
@@ -1604,6 +1614,9 @@ html, body {
     padding: 0 16px;
     height: 56px;
     flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 20;
   }
 
   .messages-container {
@@ -1617,11 +1630,12 @@ html, body {
 
   .input-area {
     flex-shrink: 0;
-    position: relative;
+    position: sticky;
+    bottom: 0;
     z-index: 40;
     padding: 10px 14px;
     padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
-    background: rgba(7, 9, 14, 0.96);
+    background: rgba(7, 9, 14, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }

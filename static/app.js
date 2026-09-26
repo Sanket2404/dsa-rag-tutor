@@ -43,6 +43,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let isSubmitting = false;
 
+  // Handle mobile virtual keyboard resize smoothly & prevent header from shifting
+  if (window.visualViewport) {
+    const syncViewportHeight = () => {
+      const vh = window.visualViewport.height;
+      document.documentElement.style.setProperty("--vvh", `${vh}px`);
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+    };
+
+    window.visualViewport.addEventListener("resize", syncViewportHeight);
+    window.visualViewport.addEventListener("scroll", () => {
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+    });
+
+    syncViewportHeight();
+  }
+
+  // Ensure window stays pinned at top when input is focused
+  if (queryInput) {
+    queryInput.addEventListener("focus", () => {
+      window.scrollTo(0, 0);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        scrollToBottom();
+      }, 80);
+    });
+
+    queryInput.addEventListener("blur", () => {
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+    });
+  }
+
   // =========================================================================
   // Initialize App
   // =========================================================================
