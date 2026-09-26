@@ -25,6 +25,12 @@
           <div>
             <div class="brand-title">DSA RAG Tutor</div>
           </div>
+          <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close Sidebar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -112,23 +118,8 @@
           <span class="param-hint">0.0–0.2 = strictly factual & grounded; 0.7+ = creative.</span>
         </div>
       </div>
-
-      <!-- System Status Footer -->
-      <div class="sidebar-footer">
-        <div class="engine-tag">
-          <span class="tag-label">Vector DB</span>
-          <span class="tag-val">ChromaDB</span>
-        </div>
-        <div class="engine-tag">
-          <span class="tag-label">Embedding</span>
-          <span class="tag-val">MiniLM-L6</span>
-        </div>
-        <div class="engine-tag">
-          <span class="tag-label">LLM Engine</span>
-          <span class="tag-val" id="llmEngineTag">Ollama / Local</span>
-        </div>
-      </div>
     </aside>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <!-- MAIN CHAT CONTAINER -->
     <main class="main-content" id="mainContent">
@@ -233,9 +224,6 @@
             </svg>
           </button>
         </form>
-        <div class="input-footer-note">
-          Running 100% locally with ChromaDB • Data never leaves your machine
-        </div>
       </footer>
 
     </main>

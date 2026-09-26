@@ -69,11 +69,36 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Mobile sidebar toggle
+  // Mobile sidebar drawer & backdrop controls
+  const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+  const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+
+  const closeSidebarMobile = () => {
+    sidebar.classList.remove("open");
+    if (sidebarBackdrop) sidebarBackdrop.classList.remove("active");
+  };
+
+  const openSidebarMobile = () => {
+    sidebar.classList.add("open");
+    if (sidebarBackdrop) sidebarBackdrop.classList.add("active");
+  };
+
   if (sidebarToggle) {
     sidebarToggle.addEventListener("click", () => {
-      sidebar.classList.toggle("open");
+      if (sidebar.classList.contains("open")) {
+        closeSidebarMobile();
+      } else {
+        openSidebarMobile();
+      }
     });
+  }
+
+  if (sidebarCloseBtn) {
+    sidebarCloseBtn.addEventListener("click", closeSidebarMobile);
+  }
+
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener("click", closeSidebarMobile);
   }
 
   // Clear chat
@@ -90,6 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chip.addEventListener("click", () => {
       const query = chip.getAttribute("data-query");
       queryInput.value = query;
+      closeSidebarMobile();
       submitQuery(query);
     });
   });
@@ -101,6 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     const query = queryInput.value.trim();
     if (!query || isSubmitting) return;
+    closeSidebarMobile();
     submitQuery(query);
   });
 
